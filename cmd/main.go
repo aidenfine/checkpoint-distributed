@@ -55,6 +55,12 @@ func main() {
 func getClientIP(r *http.Request) (string, error) {
 	var ip string
 
+	fmt.Printf("True-Client-IP: %s\n", r.Header.Get("True-Client-IP"))
+	fmt.Printf("X-Real-IP: %s\n", r.Header.Get("X-Real-IP"))
+	fmt.Printf("CF-Connecting-IP: %s\n", r.Header.Get("CF-Connecting-IP"))
+	fmt.Printf("X-Forwarded-For: %s\n", r.Header.Get("X-Forwarded-For"))
+	fmt.Printf("RemoteAddr: %s\n", r.RemoteAddr)
+
 	if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
 		fmt.Println("using true client ip")
 		ip = tcip
