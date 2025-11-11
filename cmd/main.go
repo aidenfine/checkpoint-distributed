@@ -61,22 +61,23 @@ func getClientIP(r *http.Request) (string, error) {
 	fmt.Printf("X-Forwarded-For: %s\n", r.Header.Get("X-Forwarded-For"))
 	fmt.Printf("RemoteAddr: %s\n", r.RemoteAddr)
 
-	if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
-		fmt.Println("using true client ip")
-		ip = tcip
-	} else if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
-		fmt.Println("using x-real-ip")
-		ip = xrip
-	} else if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
-		fmt.Printf("Found Cloudflare ip %s", cfip)
-		ip = cfip
-	} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 		fmt.Println("using x-forwarded-for")
 		i := strings.Index(xff, ", ")
 		if i == -1 {
 			i = len(xff)
 		}
 		ip = xff[:i]
+	} else if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+		fmt.Printf("Found Cloudflare ip %s", cfip)
+		ip = cfip
+	} else if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		fmt.Println("using x-real-ip")
+		ip = xrip
+	} else if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
+		fmt.Println("using true client ip")
+		ip = tcip
+
 	} else {
 		var err error
 		ip, _, err = net.SplitHostPort(r.RemoteAddr)
