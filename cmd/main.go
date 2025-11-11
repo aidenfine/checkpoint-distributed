@@ -56,13 +56,16 @@ func getClientIP(r *http.Request) (string, error) {
 	var ip string
 
 	if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
+		fmt.Println("using true client ip")
 		ip = tcip
 	} else if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		fmt.Println("using x-real-ip")
 		ip = xrip
 	} else if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
 		fmt.Printf("Found Cloudflare ip %s", cfip)
 		ip = cfip
 	} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		fmt.Println("using x-forwarded-for")
 		i := strings.Index(xff, ", ")
 		if i == -1 {
 			i = len(xff)
@@ -72,6 +75,7 @@ func getClientIP(r *http.Request) (string, error) {
 		var err error
 		ip, _, err = net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
+			fmt.Println("using remote address")
 			ip = r.RemoteAddr
 		}
 	}
