@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -29,7 +30,10 @@ func main() {
 	limiter := checkpoint.NewTokenBucket(3, 75, 5)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		ip := getIP(r)
+		ip, err := getClientIP(r)
+		if err != nil {
+			fmt.Printf("Err when getting client ip:%v\n", err)
+		}
 		allowed, remaining := limiter.Allow(ip)
 		if !allowed {
 			w.WriteHeader(http.StatusTooManyRequests)
@@ -47,13 +51,29 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, nil))
 }
 
-func getIP(r *http.Request) string {
-	ip := r.Header.Get("X-Forwarded-For")
-	if ip != "" {
-		parts := strings.Split(ip, ",")
-		return strings.TrimSpace(parts[0])
-	}
+// TODO: add test later
+func getClientIP(r *http.Request) (string, error) {
+	var ip string
 
-	ip = strings.Split(r.RemoteAddr, ":")[0]
-	return ip
+	if tcip := r.Header.Get("True-Client-IP"); tcip != "" {
+		ip = tcip
+	} else if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+		ip = xrip
+	} else if cfip := r.Header.Get("CF-Connecting-IP"); cfip != "" {
+		fmt.Printf("Found Cloudflare ip %s", cfip)
+		ip = cfip
+	} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		i := strings.Index(xff, ", ")
+		if i == -1 {
+			i = len(xff)
+		}
+		ip = xff[:i]
+	} else {
+		var err error
+		ip, _, err = net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			ip = r.RemoteAddr
+		}
+	}
+	return ip, nil
 }
